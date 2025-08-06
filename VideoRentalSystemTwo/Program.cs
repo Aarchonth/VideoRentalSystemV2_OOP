@@ -1,4 +1,7 @@
-﻿using System.ComponentModel;
+﻿// First video rental system in C#
+// Goal: Understand and apply login, registration, and movie rental logic
+// By [Aarchonth]
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Linq;
@@ -14,6 +17,7 @@ class User
     public string Name { get; set; }
     public string Password { get; set; }
     public Role Role { get; set; }
+    public List<Movie> RentedMovies = new List<Movie>();
 }
 class UserManagment
 {
@@ -69,7 +73,7 @@ class UserInteraction
             Console.WriteLine("LogIn Failed");
         }
     }
-    public static void HandlingMenu(User user)
+    public static void HandlingMenu(User user,Library library)
     {
         Console.WriteLine($"Hello {user.Name}");
         Console.WriteLine("1. Rent Video");
@@ -88,11 +92,17 @@ class UserInteraction
             }
         }
     }
-    public static void HandlingRentMovie(Library library) 
+    public static void HandlingRentMovie(User user, Library library) 
     {
         Console.WriteLine("Type in the Movie Title to rent:");
         string title = Console.ReadLine();
-        library.RentMovie(title);
+        library.RentMovie(user, title);
+    }
+    public static void HandlingReturnMovie(User user, Library library)
+    {
+        foreach(Movie movie in user.RentedMovies) { Console.WriteLine($"{movie.Title}"); }
+        string title = Console.ReadLine();
+        library.ReturnMovie(user, title);
     }
     
 }
@@ -113,13 +123,28 @@ class Library
         }
     }
 
-    public void RentMovie(string title)
+    public void RentMovie(User user, string title)
     {
         var movie = availableMovies.FirstOrDefault((m => m.Title == title));
         if (movie != null)
         {
             availableMovies.Remove(movie);
+            user.RentedMovies.Add(movie);
             Console.WriteLine($"You rented: {movie.Title}");
+        }
+        else
+        {
+            Console.WriteLine("Movie not found.");
+        }
+    }
+    public void ReturnMovie(User user, string title)
+    {
+        var movie = user.RentedMovies.FirstOrDefault((m => m.Title == title));
+        if (movie != null)
+        {
+            user.RentedMovies.Remove(movie);
+            availableMovies.Add(movie);
+            Console.WriteLine($"You returned: {movie.Title}");
         }
         else
         {
@@ -130,13 +155,31 @@ class Library
 }
     class Program
     {
+       public  static void Start()
+    {
+        Movie movie = new Movie { Title = "Lotr" };
+        Library library = new Library();
+
+        UserManagment userManagment = new UserManagment();
+
+        // Registration
+        UserInteraction.HandlingRegister(userManagment);
+
+        // Login
+        User user = null;
+        
+        while (user == null)
+        {
+            Console.WriteLine("Bitte erneut einloggen:");
+            string name = Console.ReadLine();
+            string password = Console.ReadLine();
+            user = userManagment.Login(name, password);
+        }
+
+        UserInteraction.HandlingMenu(user, library);
+    }
         static void Main()
         {
-
-            Movie movie = new Movie { Title = "Lotr" };
-
-            UserManagment managment = new UserManagment();
-            UserInteraction.HandlingRegister(managment);
-
+        Start();
         }
     } 
